@@ -1,8 +1,10 @@
 # Appy
 
-Bootstraps a typical Express 3.0 app with even less fuss than usual. Makes a bunch of bold assumptions that are spot on for me and allow me to get moving swiftly. If they work for you too... awesome! If not, no worries - Appy isn't doing anything you can't do yourself in an hour or two.
+<a href="http://apostrophenow.org/"><img src="https://raw.github.com/punkave/appy/master/logos/logo-box-madefor.png" align="right" /></a>
 
-Right now appy creates an app that:
+Bootstraps a typical Express 3.0 app with even less fuss than usual. Makes a bunch of bold assumptions that are spot on for us and allow us to get moving swiftly. If they work for you too... awesome! If not, no worries - Appy isn't doing anything you can't do yourself in an hour or two.
+
+Appy creates an app that:
 
 * Supports local users in a MongoDB collection and/or a hardcoded list
 * Alternatively, supports Twitter authentication
@@ -31,75 +33,75 @@ Your `ready` callback must then invoke `appy.listen`.
 
 Here's a simple example (see also `sample.js`):
 
-var appy = require(__dirname + '/appy.js');
+    var appy = require(__dirname + '/appy.js');
 
-appy.bootstrap({
-  auth: {
-    strategy: 'local',
-    options: {
-      // Hardcoded users are handy for testing and for simple sites
-      users: {
-        admin: {
-          username: 'admin',
-          password: 'demo'
+    appy.bootstrap({
+      auth: {
+        strategy: 'local',
+        options: {
+          // Hardcoded users are handy for testing and for simple sites
+          users: {
+            admin: {
+              username: 'admin',
+              password: 'demo'
+            }
+          },
+          // This is the default name for the users mongodb collection
+          collection: 'users'
         }
       },
-      // This is the default name for the users mongodb collection
-      collection: 'users'
-    }
-  },
-  // A neat alternative: twitter auth
-  // auth: {
-  //   strategy: 'twitter',
-  //   options: {
-  //     consumerKey: 'xxxx',
-  //     consumerSecret: 'xxxx',
-  //     callbackURL: 'http://my.example.com:3000/twitter-auth'
-  //   }
-  // },
-  //
-  // Or pass a function as your 'strategy', see the passport docs
+      // A neat alternative: twitter auth
+      // auth: {
+      //   strategy: 'twitter',
+      //   options: {
+      //     consumerKey: 'xxxx',
+      //     consumerSecret: 'xxxx',
+      //     callbackURL: 'http://my.example.com:3000/twitter-auth'
+      //   }
+      // },
+      //
+      // Or pass a function as your 'strategy', see the passport docs
 
-  static: __dirname + '/sample-public',
+      static: __dirname + '/sample-public',
 
-  // Lock the /new prefix to require login. You can lock
-  // an array of prefixes if you wish.
-  // Prefixes must be followed by / or . or
-  // be matched exactly. To lock everything except the
-  // login mechanism itself, use locked: true
-  locked: '/new',
-  // If you're using locked: true you can make exceptions here
-  // unlocked: [ '/welcome' ]
-  sessionSecret: 'whatever',
-  // Redirects to this host if accessed by another name
-  // (canonicalization). This is pretty hard to undo once
-  // the browser gets the redirect, so use it in production only
-  // host: 'my.example.com:3000',
-  db: {
-    // host: 'localhost'
-    // port: 27017,
-    name: 'example',
-    collections: [ 'posts' ]
-    // If I need indexes I specify that collection in more detail:
-    // [ { name: 'posts', index: { fields: { { title: 1 } }, unique: true } } ]
-    // Or more than one index:
-    // [ { name: 'posts', indexes: [ { fields: { { title: 1 } } }, ... ] } ]
-  },
-  ready: function(app, db) {
-    app.get('/', function(req, res) {
-      appy.posts.find().sort({created: -1}).toArray(function(err, posts) {
-        res.send('messages: ' + posts.map(function(post) { return post.message; }).join());
-      });
+      // Lock the /new prefix to require login. You can lock
+      // an array of prefixes if you wish.
+      // Prefixes must be followed by / or . or
+      // be matched exactly. To lock everything except the
+      // login mechanism itself, use locked: true
+      locked: '/new',
+      // If you're using locked: true you can make exceptions here
+      // unlocked: [ '/welcome' ]
+      sessionSecret: 'whatever',
+      // Redirects to this host if accessed by another name
+      // (canonicalization). This is pretty hard to undo once
+      // the browser gets the redirect, so use it in production only
+      // host: 'my.example.com:3000',
+      db: {
+        // host: 'localhost'
+        // port: 27017,
+        name: 'example',
+        collections: [ 'posts' ]
+        // If I need indexes I specify that collection in more detail:
+        // [ { name: 'posts', index: { fields: { { title: 1 } }, unique: true } } ]
+        // Or more than one index:
+        // [ { name: 'posts', indexes: [ { fields: { { title: 1 } } }, ... ] } ]
+      },
+      ready: function(app, db) {
+        app.get('/', function(req, res) {
+          appy.posts.find().sort({created: -1}).toArray(function(err, posts) {
+            res.send('messages: ' + posts.map(function(post) { return post.message; }).join());
+          });
+        });
+        app.get('/new/:message', function(req, res) {
+          var post = { 'message': req.params.message, 'createdAt': new Date() };
+          appy.posts.insert(post, function(err) {
+            res.send('added');
+          });
+        });
+        appy.listen();
+      }
     });
-    app.get('/new/:message', function(req, res) {
-      var post = { 'message': req.params.message, 'createdAt': new Date() };
-      appy.posts.insert(post, function(err) {
-        res.send('added');
-      });
-    });
-    appy.listen();
-  }
-});
 
 
 Note that the `strategy` option can also be a custom strategy function rather than a string. You can rely on the strategy functions provided in appy.js as examples of how this function should operate.
@@ -157,6 +159,15 @@ By default, appy will look for a collection called `users`. If this is not what 
 
 *Hardcoded users win* in case of any conflict.
 
+## About P'unk Avenue and Apostrophe
+
+`appy` was created at [P'unk Avenue](http://punkave.com) for use in many projects built with Apostrophe, an open-source content management system built on node.js. Appy isn't mandatory for Apostrophe and vice versa, but they play very well together. If you like `appy` you should definitely [check out apostrophenow.org](http://apostrophenow.org). Also be sure to visit us on [github](http://github.com/punkave).
+
+## Support
+
+Feel free to open issues on [github](http://github.com/punkave/appy).
+
+<a href="http://punkave.com/"><img src="https://raw.github.com/punkave/appy/master/logos/logo-box-builtby.png" /></a>
 
 
 
