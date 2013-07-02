@@ -126,7 +126,11 @@ var authStrategies = {
           if (err) {
             return done(err);
           }
-          var result = passwordHash.verify(password, user.password);
+          // Allow an alternate password verification function
+          var verify = options.verify || function(password, hash) {
+            return passwordHash.verify(password, hash);
+          };
+          var result = verify(password, user.password);
           if (result) {
             // Don't keep this around where it might wind up in a session somehow,
             // even though it's hashed that is still dangerous
