@@ -126,6 +126,9 @@ var authStrategies = {
           if (err) {
             return done(err);
           }
+          if (!user) {
+            return done(null, false, { message: 'Invalid username or password' });
+          }
           // Allow an alternate password verification function
           var verify = options.verify || function(password, hash) {
             return passwordHash.verify(password, hash);
