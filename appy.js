@@ -84,6 +84,12 @@ var authStrategies = {
     var LocalStrategy = require('passport-local').Strategy;
     passport.use(new LocalStrategy(
       function(username, password, callback) {
+        // Make sure we're not vulnerable to an exploit trying passwords
+        // that will match all users for whom either username or email
+        // happens to be blank
+        if (!username.length) {
+          return done(null, false, { message: 'Invalid username or password' });
+        }
         function done(err, user, args) {
           if (err || (!user)) {
             return callback(err, user, args);
@@ -106,7 +112,7 @@ var authStrategies = {
           return callback(null, user, args);
         }
         var user = _.find(options.users, function(user) {
-          return (user.username === username);
+          return (user.username === username) || (user.email === username);
         });
         if (user) {
           if (user.password === password) {
@@ -122,7 +128,7 @@ var authStrategies = {
           return done(null, false, { message: 'Invalid username or password' });
         }
         var users = module.exports[collection];
-        users.findOne({ username: username }, function(err, user) {
+        users.findOne({ $or: [ { username: username }, { email: username } ] }, function(err, user) {
           if (err) {
             return done(err);
           }
