@@ -209,7 +209,14 @@ var authStrategies = {
       passport.authenticate('local',
         { failureRedirect: '/login', failureFlash: true }),
       function(req, res) {
-        res.redirect('/');
+        if(options.redirect) {
+          // Send the response back to app.js to check permissions.
+          res.redirect(options.redirect(req.user));
+        } else {
+          // If for some reason the Apostrophe.js check doesn't work
+          // then home seems a sensible default.
+          res.redirect('/');
+        };
       }
     );
   }
@@ -411,11 +418,11 @@ function appBootstrap(callback) {
 
   // Inject 'partial' into the view engine so that we can have real
   // partials with a separate namespace and the ability to extend
-  // their own parent template, etc. Express doesn't believe in this, 
+  // their own parent template, etc. Express doesn't believe in this,
   // but we do.
   //
   // Use a clever hack to warn the developer it's not going to work
-  // if they have somehow found a template language that is 
+  // if they have somehow found a template language that is
   // truly asynchronous.
 
   app.locals.partial = function(name, data) {
