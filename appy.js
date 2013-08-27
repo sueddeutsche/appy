@@ -203,7 +203,13 @@ var authStrategies = {
       if (typeof(options.template) !== 'function') {
         options.template = _.template(options.template);
       }
-      res.send(options.template({ message: message }));
+      // Let the login template also access the query string parameters
+      // for a little extra flexibility in showing messages to the user
+      var data = {
+        message: message,
+        query: req.query
+      };
+      res.send(options.template(data));
     });
     app.post('/login',
       passport.authenticate('local',
@@ -216,7 +222,7 @@ var authStrategies = {
           // If for some reason the Apostrophe.js check doesn't work
           // then home seems a sensible default.
           res.redirect('/');
-        };
+        }
       }
     );
   }

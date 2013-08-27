@@ -164,6 +164,8 @@ By default, appy will look for a collection called `users`. If this is not what 
 
 ## Changelog
 
+0.1.28: The req.query object is now available to the login template as the `query` property. This is helpful in displaying additional situation-dependent messages to users beyond the simple flash `message` property.
+
 0.1.27: users may now log in with either their email address or their username when using the local strategy. Specifically, `appy` checks for both the `username` property and the `email` property. For safety, `appy` always makes sure the name the user has entered is not empty, so that this feature can't be used to test common passwords against the set of all users who do not have an email address.
 
 ## About P'unk Avenue and Apostrophe
