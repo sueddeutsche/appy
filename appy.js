@@ -268,7 +268,6 @@ function dbBootstrap(callback) {
           options.db.port = 27017;
         }
         uri += options.db.host + ':' + options.db.port + '/' + options.db.name;
-        console.log(uri);
       }
       return mongo.MongoClient.connect(uri, function (err, dbArg) {
         db = dbArg;
