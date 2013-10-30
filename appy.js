@@ -4,12 +4,13 @@ var passport = require('passport');
 var fs = require('fs');
 var async = require('async');
 var mongo = require('mongodb');
-var connectMongoDb = require('connect-mongodb');
+var ConnectMongo = require('connect-mongo')(express);
 var flash = require('connect-flash');
 var url = require('url');
 var dirname = require('path').dirname;
 var lessMiddleware = require('less-middleware');
 var passwordHash = require('password-hash');
+var clone = require('clone');
 
 var options;
 var db;
@@ -26,7 +27,7 @@ var authStrategies = {
         // We now have a unique id, username and full name
         // (display name) for the user courtesy of Twitter.
 
-        var user = _.clone(profile);
+        var user = clone(profile);
 
         // For the convenience of mongodb
         user._id = user.id;
@@ -247,116 +248,94 @@ module.exports.bootstrap = function(optionsArg)
 };
 
 function dbBootstrap(callback) {
-  // Open the database connection
+  // Open the database connection. Always use MongoClient with its
+  // sensible defaults. Build a URI if we need to so we can call it
+  // in a consistent way
 
-  if (options.db.uri) {
-    // Borrowed this logic from mongoose https://github.com/LearnBoost/mongoose/blob/master/lib/connection.js#L143
-    var uri = url.parse(options.db.uri);
-    options.db.host = uri.hostname;
-    if (parseInt(uri.port, 10)) {
-      options.db.port = parseInt(uri.port, 10);
-    } else {
-      uri.port = 27017;
-    }
-    options.db.name = uri.pathname && uri.pathname.replace(/\//g, '');
-    if (uri.auth) {
-      var auth = uri.auth.split(':');
-      options.db.user = auth[0];
-      options.db.password = auth[1];
-    }
-  }
-  if (!options.db.host) {
-    options.db.host = 'localhost';
-  }
-  if (!options.db.port) {
-    options.db.port = 27017;
-  }
-
-  db = module.exports.db = new mongo.Db(
-    options.db.name,
-    new mongo.Server(options.db.host, options.db.port, {}),
-    // Sensible default of safe: true
-    // (soon to be the driver's default)
-    { safe: true });
-
-  db.open(function(err) {
-    if (err)
-    {
-      callback(err);
-      return;
-    }
-    if (options.db.user) {
-      db.authenticate(options.db.user, options.db.password, authenticated);
-    } else {
-      authenticated(null);
-    }
-  });
-
-  function authenticated(err) {
-    if (err) {
-      callback(err);
-      return;
-    }
-
-    // Automatically configure a collection for users if the local strategy
-    // is in use
-
-    var collections = options.db.collections || [];
-    if (options.auth && (options.auth.strategy === 'local')) {
-      var authCollection = options.auth.options.collection || 'users';
-      if (!_.contains(collections, authCollection)) {
-        collections.push(authCollection);
-      }
-    }
-
-    async.map(collections, function(info, next) {
-      var name;
-      var options;
-      if (typeof(info) !== 'string') {
-        name = info.name;
-        options = info;
-        delete options.name;
-      }
-      else
-      {
-        name = info;
-        options = {};
-      }
-      db.collection(name, options, function(err, collection) {
-        if (err) {
-          console.log('no ' + name + ' collection available, mongodb offline?');
-          console.log(err);
-          process.exit(1);
+  return async.series({
+    connect: function(callback) {
+      var uri = 'mongodb://';
+      if (options.db.uri) {
+        uri = options.db.uri;
+      } else {
+        if (options.db.user) {
+          uri += options.db.user + ':' + options.db.password + '@';
         }
-        if (options.index) {
-          options.indexes = [ options.index ];
+        if (!options.db.host) {
+          options.db.host = 'localhost';
         }
-        if (options.indexes) {
-          async.map(options.indexes, function(index, next) {
-            var fields = index.fields;
-            // The remaining properties are options
-            delete index.fields;
-            collection.ensureIndex(fields, index, next);
-          }, function(err) {
-            if (err) {
-              console.log('Unable to create index');
-              console.log(err);
-              process.exit(1);
-            }
-            afterIndexes();
-          });
+        if (!options.db.port) {
+          options.db.port = 27017;
+        }
+        uri += options.db.host + ':' + options.db.port + '/' + options.db.name;
+        console.log(uri);
+      }
+      return mongo.MongoClient.connect(uri, function (err, dbArg) {
+        db = dbArg;
+        return callback(err);
+      });
+    },
+    collections: function(callback) {
+      // Automatically configure a collection for users if the local strategy
+      // is in use
+
+      var collections = options.db.collections || [];
+      if (options.auth && (options.auth.strategy === 'local')) {
+        var authCollection = options.auth.options.collection || 'users';
+        if (!_.contains(collections, authCollection)) {
+          collections.push(authCollection);
+        }
+      }
+
+      async.map(collections, function(info, next) {
+        var name;
+        var options;
+        if (typeof(info) !== 'string') {
+          name = info.name;
+          options = info;
+          delete options.name;
         }
         else
         {
-          afterIndexes();
+          name = info;
+          options = {};
         }
-        function afterIndexes() {
-          module.exports[name] = collection;
-          next();
-        }
-      });
-    }, callback);
-  }
+        db.collection(name, options, function(err, collection) {
+          if (err) {
+            console.log('no ' + name + ' collection available, mongodb offline?');
+            console.log(err);
+            process.exit(1);
+          }
+          if (options.index) {
+            options.indexes = [ options.index ];
+          }
+          if (options.indexes) {
+            async.map(options.indexes, function(index, next) {
+              var fields = index.fields;
+              // The remaining properties are options
+              delete index.fields;
+              collection.ensureIndex(fields, index, next);
+            }, function(err) {
+              if (err) {
+                console.log('Unable to create index');
+                console.log(err);
+                process.exit(1);
+              }
+              afterIndexes();
+            });
+          }
+          else
+          {
+            afterIndexes();
+          }
+          function afterIndexes() {
+            module.exports[name] = collection;
+            next();
+          }
+        });
+      }, callback);
+    }
+  }, callback);
 }
 
 function appBootstrap(callback) {
@@ -406,130 +385,175 @@ function appBootstrap(callback) {
   app.use(express.cookieParser());
 
   // Express sessions let us remember the mood the user wanted while they are off logging in on twitter.com
+
   // The mongo session store allows our sessions to persist between restarts of the app
-  var mongoStore = new connectMongoDb({ db: db });
 
-  app.use(express.session({ secret: options.sessionSecret, store: mongoStore }));
-  // We must install passport's middleware before we can set routes that depend on it
-  app.use(passport.initialize());
-  // Passport sessions remember that the user is logged in
-  app.use(passport.session());
+  // We changed the collection name from the old "sessions" so that connect-mongo doesn't
+  // try to parse sessions created by connect-mongodb, which won't work
 
-  // Always make the authenticated user object available
-  // to templates
-  app.use(function(req, res, next) {
-    res.locals.user = req.user ? req.user : null;
-    next();
-  });
+  var storeOptions = clone(options.sessions || {});
+  storeOptions.db = db;
 
-  // Inject 'partial' into the view engine so that we can have real
-  // partials with a separate namespace and the ability to extend
-  // their own parent template, etc. Express doesn't believe in this,
-  // but we do.
-  //
-  // Use a clever hack to warn the developer it's not going to work
-  // if they have somehow found a template language that is
-  // truly asynchronous.
+  var sessions;
 
-  app.locals.partial = function(name, data) {
-    var result = '___***ASYNCHRONOUS';
-    if (!data) {
-      data = {};
+  return async.series({
+    sessionCollection: function(callback) {
+      // Get access to the collection that connect-mongo will use so we can
+      // upgrade old sessions first.
+      return db.collection(storeOptions.collection || 'sessions', options, function(err, collection) {
+        if (err) {
+          return callback(err);
+        }
+        sessions = collection;
+        return callback(null);
+      });
+    },
+    sessionUpgrade: function(callback) {
+      // upgrade connect-mongodb sessions to connect-mongo by giving them an
+      // expires property, without which connect-mongo won't look at them.
+      // Set them to the connect-mongo default of 2 weeks.
+      var today = new Date();
+      var twoWeeks = 1000 * 60 * 60 * 24 * 14;
+      var expires = new Date(today.getTime() + twoWeeks);
+      return sessions.update(
+        {
+          expires: { $exists: 0 }
+        },
+        {
+          $set: { expires: expires }
+        },
+        {
+          multi: true
+        }, callback
+      );
     }
-    if (!data._locals) {
-      data._locals = {};
+  }, function(err) {
+    if (err) {
+      return callback(err);
     }
-    if (!data._locals.partial) {
-      data._locals.partial = app.locals.partial;
-    }
-    app.render(name, data, function(err, resultArg) {
-      result = resultArg;
+    mongoStore = new ConnectMongo(storeOptions);
+    app.use(express.session({ secret: options.sessionSecret, store: mongoStore }));
+    // We must install passport's middleware before we can set routes that depend on it
+    app.use(passport.initialize());
+
+    // Passport sessions remember that the user is logged in
+    app.use(passport.session());
+    // Always make the authenticated user object available
+    // to templates
+    app.use(function(req, res, next) {
+      res.locals.user = req.user ? req.user : null;
+      next();
     });
-    if (result === '___***ASYNCHRONOUS') {
-      throw "'partial' cannot be used with an asynchronous template engine";
-    }
-    return result;
-  };
 
-  // Always define 'error' so we can 'if' on it painlessly
-  // in Jade. This is particularly awkward otherwise
-  app.locals.error = null;
+    // Inject 'partial' into the view engine so that we can have real
+    // partials with a separate namespace and the ability to extend
+    // their own parent template, etc. Express doesn't believe in this,
+    // but we do.
+    //
+    // Use a clever hack to warn the developer it's not going to work
+    // if they have somehow found a template language that is
+    // truly asynchronous.
 
-  // Always make flash attributes available
-  app.use(flash());
+    app.locals.partial = function(name, data) {
+      var result = '___***ASYNCHRONOUS';
+      if (!data) {
+        data = {};
+      }
+      if (!data._locals) {
+        data._locals = {};
+      }
+      if (!data._locals.partial) {
+        data._locals.partial = app.locals.partial;
+      }
+      app.render(name, data, function(err, resultArg) {
+        result = resultArg;
+      });
+      if (result === '___***ASYNCHRONOUS') {
+        throw "'partial' cannot be used with an asynchronous template engine";
+      }
+      return result;
+    };
 
-  // viewEngine can be a custom function to set up the view engine
-  // yourself (useful for Nunjucks and other view engines with a
-  // nonstandard setup procedure with Express)
-  if (typeof(options.viewEngine) === 'function') {
-    options.viewEngine(app);
-  } else {
-    app.set('view engine', options.viewEngine ? options.viewEngine : 'jade');
-  }
+    // Always define 'error' so we can 'if' on it painlessly
+    // in Jade. This is particularly awkward otherwise
+    app.locals.error = null;
 
-  // Before we set up any routes we need to set up our security middleware
+    // Always make flash attributes available
+    app.use(flash());
 
-  if (!options.unlocked)
-  {
-    options.unlocked = [];
-  }
-  _.each(['/login', '/logout', '/twitter-auth'], function(url) {
-    if (!_.include(options.unlocked, url))
-    {
-      options.unlocked.push(url);
-    }
-  });
-
-  if (options.locked === true) {
-    // Secure everything except prefixes on the unlocked list
-    // (the middleware checks for those)
-    app.use(securityMiddleware);
-  } else if (options.locked) {
-    // Secure only things matching the given prefixes, minus things
-    // matching the insecure list
-    if (typeof(options.locked) === 'string')
-    {
-      options.locked = [options.locked];
-    }
-    _.each(options.locked, function(prefix) {
-      app.use(prefix, securityMiddleware);
-    });
-  } else {
-    // No security by default (but logins work and you can check req.user yourself)
-  }
-
-  // Add additional global middleware. Needs to happen before we add any routes,
-  // so we do it before the security strategies, which often add routes
-  if (options.middleware) {
-    _.each(options.middleware, function(middleware) {
-      app.use(middleware);
-    });
-  }
-
-  if (options.auth)
-  {
-    // One can pass a custom strategy object or the name
-    // of a built-in strategy
-    var strategy;
-    if (typeof(options.auth.strategy) === 'string') {
-      strategy = authStrategies[options.auth.strategy];
+    // viewEngine can be a custom function to set up the view engine
+    // yourself (useful for Nunjucks and other view engines with a
+    // nonstandard setup procedure with Express)
+    if (typeof(options.viewEngine) === 'function') {
+      options.viewEngine(app);
     } else {
-      strategy = options.auth.strategy;
+      app.set('view engine', options.viewEngine ? options.viewEngine : 'jade');
     }
-    options.auth.options.app = app;
-    // We made this option top level, but
-    // custom auth strategies need to be able to see it
-    options.auth.options.beforeSignin = options.beforeSignin;
-    strategy(options.auth.options);
-  }
 
-  app.get('/logout', function(req, res)
-  {
-    req.logOut();
-    res.redirect('/');
+    // Before we set up any routes we need to set up our security middleware
+
+    if (!options.unlocked)
+    {
+      options.unlocked = [];
+    }
+    _.each(['/login', '/logout', '/twitter-auth'], function(url) {
+      if (!_.include(options.unlocked, url))
+      {
+        options.unlocked.push(url);
+      }
+    });
+
+    if (options.locked === true) {
+      // Secure everything except prefixes on the unlocked list
+      // (the middleware checks for those)
+      app.use(securityMiddleware);
+    } else if (options.locked) {
+      // Secure only things matching the given prefixes, minus things
+      // matching the insecure list
+      if (typeof(options.locked) === 'string')
+      {
+        options.locked = [options.locked];
+      }
+      _.each(options.locked, function(prefix) {
+        app.use(prefix, securityMiddleware);
+      });
+    } else {
+      // No security by default (but logins work and you can check req.user yourself)
+    }
+
+    // Add additional global middleware. Needs to happen before we add any routes,
+    // so we do it before the security strategies, which often add routes
+    if (options.middleware) {
+      _.each(options.middleware, function(middleware) {
+        app.use(middleware);
+      });
+    }
+
+    if (options.auth)
+    {
+      // One can pass a custom strategy object or the name
+      // of a built-in strategy
+      var strategy;
+      if (typeof(options.auth.strategy) === 'string') {
+        strategy = authStrategies[options.auth.strategy];
+      } else {
+        strategy = options.auth.strategy;
+      }
+      options.auth.options.app = app;
+      // We made this option top level, but
+      // custom auth strategies need to be able to see it
+      options.auth.options.beforeSignin = options.beforeSignin;
+      strategy(options.auth.options);
+    }
+
+    app.get('/logout', function(req, res)
+    {
+      req.logOut();
+      res.redirect('/');
+    });
+
+    return callback(null);
   });
-
-  callback(null);
 
   // Canonicalization is good for SEO and prevents user confusion,
   // Twitter auth problems in dev, etc.
@@ -562,7 +586,7 @@ module.exports.listen = function() {
   }
   console.log("Listening on port " + port);
   app.listen(port);
-}
+};
 
 
 function securityMiddleware(req, res, next) {

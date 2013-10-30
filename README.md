@@ -11,7 +11,7 @@ Appy creates an app that:
 * Also supports custom auth strategy functions
 * Has /login and /logout URLs for the above
 * Provides a post-authentication callback
-* Provides a MongoDB database for storage and for sessions (safe: true is on)
+* Provides a MongoDB database for storage and for sessions, with sensible defaults
 * Provides ready-to-rock MongoDB collections
 * Eases configuration of MongoDB indexes
 * Redirects traffic to a canonical hostname
@@ -29,28 +29,26 @@ Appy creates an app that:
 
 You must pass a callback function called `ready` to the appy.boostrap method. This callback receives the Express app and the db for convenience, however you can also access them as properties of the appy object.
 
-Your `ready` callback must then invoke `appy.listen`.
+Your `ready` callback must then invoke `appy.listen` after setting up Express routes and anything else you'd like to do before you listen for connections.
 
 Here's a simple example (see also `sample.js`):
 
     var appy = require(__dirname + '/appy.js');
 
     appy.bootstrap({
+      // Hardcode some users. Will also look for users in the users collection by default
       auth: {
         strategy: 'local',
         options: {
-          // Hardcoded users are handy for testing and for simple sites
           users: {
             admin: {
               username: 'admin',
               password: 'demo'
             }
-          },
-          // This is the default name for the users mongodb collection
-          collection: 'users'
+          }
         }
       },
-      // A neat alternative: twitter auth
+      // An alternative: Twitter auth
       // auth: {
       //   strategy: 'twitter',
       //   options: {
@@ -59,34 +57,47 @@ Here's a simple example (see also `sample.js`):
       //     callbackURL: 'http://my.example.com:3000/twitter-auth'
       //   }
       // },
-      //
-      // Or pass a function as your 'strategy', see the passport docs
 
+      // Serve static files
       static: __dirname + '/sample-public',
 
-      // Lock the /new prefix to require login. You can lock
-      // an array of prefixes if you wish.
-      // Prefixes must be followed by / or . or
-      // be matched exactly. To lock everything except the
-      // login mechanism itself, use locked: true
+      // Lock all URLs beginning with this prefix to require login. You can lock
+      // an array of prefixes if you wish . Prefixes must be followed by / or . or
+      // be matched exactly. To lock everything except the login mechanism itself,
+      // use locked: true
       locked: '/new',
+
       // If you're using locked: true you can make exceptions here
       // unlocked: [ '/welcome' ]
+
+      // Choose your own please
       sessionSecret: 'whatever',
+
+      sessions: {
+        // You can pass options directly to connect-mongo here to customize sessions
+      },
+
       // Redirects to this host if accessed by another name
       // (canonicalization). This is pretty hard to undo once
       // the browser gets the redirect, so use it in production only
       // host: 'my.example.com:3000',
+
+      // Database configuration
       db: {
-        // host: 'localhost'
-        // port: 27017,
-        name: 'example',
+        // MongoDB URL to connect to
+        uri: 'mongodb://localhost:27017/example',
+
+        // These collections become available as appy.posts, etc.
         collections: [ 'posts' ]
+
         // If I need indexes I specify that collection in more detail:
         // [ { name: 'posts', index: { fields: { { title: 1 } }, unique: true } } ]
         // Or more than one index:
         // [ { name: 'posts', indexes: [ { fields: { { title: 1 } } }, ... ] } ]
       },
+
+      // This is where your code goes! Add routes, do anything else you want to do,
+      // then call appy.listen
       ready: function(app, db) {
         app.get('/', function(req, res) {
           appy.posts.find().sort({created: -1}).toArray(function(err, posts) {
@@ -103,10 +114,15 @@ Here's a simple example (see also `sample.js`):
       }
     });
 
+## Alternate strategies for logging users in
 
-Note that the `strategy` option can also be a custom strategy function rather than a string. You can rely on the strategy functions provided in appy.js as examples of how this function should operate.
+The `strategy` option can be:
 
-Because the goal here is to bootstrap simple apps quickly, I broke the rule that every callback should take an `err` argument first. If your database connection and app configuration fail, what are you supposed to do about it? Not a lot, right? So appy just prints the error and exits.
+* `local`, which supports a MongoDB collection of user objects
+* `twitter`, which uses Twitter authentication
+* A custom function; see the `local` and `twitter` strategy functions in `appy.js` for examples
+
+Whichever you use, once a user logs in `req.user` is always populated.
 
 ## The beforeSignin callback
 
@@ -138,7 +154,7 @@ In Nunjucks you would write:
 
 ## Appy, users, and mongodb
 
-Appy's `local` auth strategy now supports storing users in MongoDB. The rule is very simple: you must have a MongoDB collection with...
+Appy's `local` auth strategy supports storing users in MongoDB. The rule is very simple: you must have a MongoDB collection with...
 
 * Either a `username` property, an `email` property, or both. Either is acceptable when logging in
 * A password property, containing a hashed password as generated by the [password-hash](https://npmjs.org/package/password-hash) npm module, or one compatible with the function you supply as the `verify` option to the `local` strategy. Plaintext passwords are quite deliberately NOT supported.
@@ -163,6 +179,12 @@ By default, appy will look for a collection called `users`. If this is not what 
 *Hardcoded users win* in case of any conflict.
 
 ## Changelog
+
+0.1.31:
+
+* connect to MongoDB via [MongoClient](http://mongodb.github.io/node-mongodb-native/driver-articles/mongoclient.html). This gives us sensible defaults for many MongoDB options, including `auto_reconnect` for improved stability. The old `db.host`, `db.port`, etc. options are still supported and we build , but `db.uri` is preferred and gives you much more flexibility. See the [MongoClient docs](http://mongodb.github.io/node-mongodb-native/driver-articles/mongoclient.html).
+
+* Session storage change: replaced the unsupported `connect-mongodb` module with the actively maintained `connect-mongo` module. With this change, sessions expire after two weeks by default, rather than never expiring, which tends to create an enormous database after a while. Also, you can pass options to `connect-mongo` via the `sessions` option to appy, so you are not stuck with this default. No code changes are required on existing projects. Existing sessions are automatically migrated and their two-week expiration period begins at the time of first launch after the upgrade.
 
 0.1.30: modern versions of the mongodb and async modules. No change in behavior.
 
