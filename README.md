@@ -180,6 +180,10 @@ By default, appy will look for a collection called `users`. If this is not what 
 
 ## Changelog
 
+0.1.32:
+
+* When using the local strategy, users stored in MongoDB are refreshed from the database on each request. The performance hit is justified mainly by the need to lock out users whose accounts have been deleted immediately. In addition we can see changes to the user's profile immediately.
+
 0.1.31:
 
 * connect to MongoDB via [MongoClient](http://mongodb.github.io/node-mongodb-native/driver-articles/mongoclient.html). This gives us sensible defaults for many MongoDB options, including `auto_reconnect` for improved stability. The old `db.host`, `db.port`, etc. options are still supported and we build , but `db.uri` is preferred and gives you much more flexibility. See the [MongoClient docs](http://mongodb.github.io/node-mongodb-native/driver-articles/mongoclient.html).

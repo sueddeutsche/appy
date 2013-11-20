@@ -145,6 +145,12 @@ var authStrategies = {
             // Don't keep this around where it might wind up in a session somehow,
             // even though it's hashed that is still dangerous
             delete user.password;
+
+            // Flag indicating this user came from mongodb. We use this to
+            // determine we should refresh them from the database via the
+            // serialization middleware, to ensure we have an up to date idea
+            // of their profile and privileges
+            user._mongodb = true;
             return done(null, user);
           } else {
             return done(null, false, { message: 'Invalid username or password' });
@@ -152,6 +158,58 @@ var authStrategies = {
         });
       }
     ));
+
+    passport.serializeUser(function(user, done) {
+      if (user._mongodb) {
+        // MongoDB user - store enough info to look them up on each request.
+        // That buys us the ability to lock out someone who has
+        // lost their account, display someone's edited name, etc.
+        return done(null, JSON.stringify({ _id: user._id, _mongodb: true }));
+      } else {
+        // Twitter or a hardcoded local user
+        return done(null, JSON.stringify(user));
+      }
+    });
+
+    passport.deserializeUser(function(json, done) {
+      var user = JSON.parse(json);
+      if (!user)
+      {
+        return done(new Error("Bad JSON string in session"), null);
+      }
+      if (user._mongodb) {
+        return async.series({
+          findUser: function(callback) {
+            var collection = options.collection || 'users';
+            var users = module.exports[collection];
+            return users.findOne({ _id: user._id }, function(err, mongoUser) {
+              if (err) {
+                return callback(err);
+              }
+              if (!mongoUser) {
+                return callback(new Error('User no longer exists'));
+              }
+              user = mongoUser;
+              user._mongodb = true;
+              return callback(null);
+            });
+          },
+          afterDeserializeUser: function(callback) {
+            // Never any reason to expose this
+            delete user.password;
+            if (!options.afterDeserializeUser) {
+              return callback(null);
+            }
+            return options.afterDeserializeUser(user, callback);
+          }
+        }, function(err) {
+          return done(err, (!err) && user);
+        });
+      } else {
+        return done(null, user);
+      }
+    });
+
     app.get('/login', function(req, res) {
       var message = req.flash('error');
       if (Array.isArray(message) && message.length) {
@@ -340,25 +398,6 @@ function dbBootstrap(callback) {
 function appBootstrap(callback) {
   app = module.exports.app = express();
 
-  // Serialize users directly in the session. So far this
-  // works for the passport strategies I've used and
-  // avoids database hits
-
-  passport.serializeUser(function(user, done) {
-    done(null, JSON.stringify(user));
-  });
-
-  passport.deserializeUser(function(json, done) {
-    var user = JSON.parse(json);
-    if (user)
-    {
-      done(null, user);
-    }
-    else
-    {
-      done(new Error("Bad JSON string in session"), null);
-    }
-  });
 
   if (options.host) {
     app.use(canonicalizeHost);
