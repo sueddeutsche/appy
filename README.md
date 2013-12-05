@@ -16,7 +16,7 @@ Appy creates an app that:
 * Eases configuration of MongoDB indexes
 * Redirects traffic to a canonical hostname
 * Offers a simple way to lock any part of the app to require login
-* Has the Express bodyParser, session and cookie middleware in place
+* Has the Express compress, bodyParser, session and cookie middleware in place
 * Uses the jade template engine by default, but you can configure others
 * Listens on port 3000 unless it sees a PORT environment variable
  or a data/port file (ready for use with Heroku or Stagecoach)
@@ -179,6 +179,10 @@ By default, appy will look for a collection called `users`. If this is not what 
 *Hardcoded users win* in case of any conflict.
 
 ## Changelog
+
+0.1.33:
+
+* Enable the `express.compress` middleware by default. So far we've had no trouble with this and it's a nice performance win. However you can disable it by setting the `compress` option to `false` in your appy configuration.
 
 0.1.32:
 

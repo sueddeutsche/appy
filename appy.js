@@ -398,6 +398,12 @@ function dbBootstrap(callback) {
 function appBootstrap(callback) {
   app = module.exports.app = express();
 
+  // Get the compress middleware in there right away to avoid conflicts
+  // and maximize its use. It's awesome, but you can disable it
+  // if you feel you really must
+  if (options.compress !== false) {
+    app.use(express.compress());
+  }
 
   if (options.host) {
     app.use(canonicalizeHost);
