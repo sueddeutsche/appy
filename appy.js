@@ -129,7 +129,12 @@ var authStrategies = {
           return done(null, false, { message: 'Invalid username or password' });
         }
         var users = module.exports[collection];
-        users.findOne({ $or: [ { username: username }, { email: username } ] }, function(err, user) {
+        var criteria = { $or: [ { username: username }, { email: username } ] };
+        if (options.extraLoginCriteria) {
+          criteria = { $and: [ criteria, options.extraLoginCriteria ] };
+        }
+        console.log(criteria);
+        users.findOne(criteria, function(err, user) {
           if (err) {
             return done(err);
           }

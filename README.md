@@ -161,6 +161,7 @@ Appy's `local` auth strategy supports storing users in MongoDB. The rule is very
 
 By default, appy will look for a collection called `users`. If this is not what you want, just set the `collection` option when configuring your auth strategy, for instance:
 
+```javascript
     auth: {
       strategy: 'local',
       options: {
@@ -175,10 +176,37 @@ By default, appy will look for a collection called `users`. If this is not what 
         collection: 'mycollectionname'
       }
     }
+```
+
+The `username` property is generally specific enough that it only matches users. But the use of the `email` property poses a problem if the same collection also contains objects with email addresses that are not considered users. To accommodate this, you may pass an `extraLoginCriteria` option that only matches users:
+
+```javascript
+    auth: {
+      strategy: 'local',
+      options: {
+        // Hardcoded users are handy for testing and for simple sites
+        users: {
+          admin: {
+            username: 'admin',
+            password: 'demo'
+          }
+        },
+        // This is the default name for the users mongodb collection
+        collection: 'mycollectionname',
+        extraLoginCriteria: {
+          type: 'person'
+        }
+      }
+    }
+```
 
 *Hardcoded users win* in case of any conflict.
 
 ## Changelog
+
+0.4.0:
+
+* If your application stores more than one kind of object in the same collection, then when searching for a user by email address you may accidentally pick up an object that is not considered a user. The new `extraLoginCriteria` option allows you to filter out objects that are not users in any way you see fit.
 
 0.1.33:
 
