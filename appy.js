@@ -133,7 +133,6 @@ var authStrategies = {
         if (options.extraLoginCriteria) {
           criteria = { $and: [ criteria, options.extraLoginCriteria ] };
         }
-        console.log(criteria);
         users.findOne(criteria, function(err, user) {
           if (err) {
             return done(err);
