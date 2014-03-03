@@ -273,8 +273,8 @@ var authStrategies = {
         query: req.query
       };
 
-      if(options.passReqRes){
-        res.send(options.template(data, req, res));
+      if(options.passReq){
+        res.send(options.template(data, req));
       } else {
         res.send(options.template(data));
       }
