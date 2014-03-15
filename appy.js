@@ -272,7 +272,12 @@ var authStrategies = {
         message: message,
         query: req.query
       };
-      res.send(options.template(data));
+
+      if(options.passReq){
+        res.send(options.template(data, req));
+      } else {
+        res.send(options.template(data));
+      }
     });
     app.post('/login',
       passport.authenticate('local',
