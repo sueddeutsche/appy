@@ -1,5 +1,5 @@
 var express = require('express');
-var _ = require('underscore');
+var _ = require('lodash');
 var passport = require('passport');
 var fs = require('fs');
 var async = require('async');
