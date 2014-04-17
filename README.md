@@ -19,7 +19,8 @@ Appy creates an app that:
 * Has the Express compress, bodyParser, session and cookie middleware in place
 * Uses the jade template engine by default, but you can configure others
 * Listens on port 3000 unless it sees a PORT environment variable
- or a data/port file (ready for use with Heroku or Stagecoach)
+ or a `data/port` file (ready for use with Heroku or Stagecoach)
+* Binds on all IP addresses unless it sees an ADDRESS environment variable or a `data/address` file
 * Adds support for robust partials to whatever template language you choose
 * Serves static files from a specified folder (use the `static` option)
 * Performs automatic LESS stylesheet compilation with `less-middleware` if a `.css` file is requested and the corresponding `.less` file exists in the static folder
@@ -203,6 +204,8 @@ The `username` property is generally specific enough that it only matches users.
 *Hardcoded users win* in case of any conflict.
 
 ## Changelog
+
+0.4.6: optional support for specifying the address to listen on, as well as the port number. The `ADDRESS` environment variable is supported, also the `data/address` file. For Unix socket connections just use `port` to specify the UNIX socket path. Thanks to [Jeff Walter](https://github.com/jeffwalter).
 
 0.4.0:
 
