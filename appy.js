@@ -624,9 +624,21 @@ function appBootstrap(callback) {
 }
 
 module.exports.listen = function() {
+  // Default address for dev
+  var address = '0.0.0.0';
   // Default port for dev
   var port = 3000;
   // Heroku
+  if (process.env.ADDRESS) {
+    address = process.env.ADDRESS;
+  } else {
+    try {
+      // Stagecoach option
+      address = fs.readFileSync(options.rootDir + '/data/address', 'UTF-8').replace(/\s+$/, '');
+    } catch (err) {
+      console.log("I see no data/address file, defaulting to address " + address);
+    }
+  }
   if (process.env.PORT) {
     port = process.env.PORT;
   } else {
@@ -637,8 +649,13 @@ module.exports.listen = function() {
       console.log("I see no data/port file, defaulting to port " + port);
     }
   }
-  console.log("Listening on port " + port);
-  app.listen(port);
+  if (port.match(/^\d+$/)) {
+    console.log("Listening on " + address + ":" + port);
+    app.listen(port, address);
+  } else {
+    console.log("Listening at " + port);
+    app.listen(port);
+  }
 };
 
 
