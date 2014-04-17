@@ -649,7 +649,7 @@ module.exports.listen = function() {
       console.log("I see no data/port file, defaulting to port " + port);
     }
   }
-  if (port.match(/^\d+$/)) {
+  if (port.toString().match(/^\d+$/)) {
     console.log("Listening on " + address + ":" + port);
     app.listen(port, address);
   } else {

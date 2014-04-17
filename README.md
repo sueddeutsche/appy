@@ -205,6 +205,8 @@ The `username` property is generally specific enough that it only matches users.
 
 ## Changelog
 
+0.4.7: don't crash if the port is an actual number and not a string representation of a number (this happens when neither `PORT` nor `data/port` is found and 3000 is assumed).
+
 0.4.6: optional support for specifying the address to listen on, as well as the port number. The `ADDRESS` environment variable is supported, also the `data/address` file. For Unix socket connections just use `port` to specify the UNIX socket path. Thanks to [Jeff Walter](https://github.com/jeffwalter).
 
 0.4.0:
