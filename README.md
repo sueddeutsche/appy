@@ -24,7 +24,7 @@ Appy creates an app that:
 * Adds support for robust partials to whatever template language you choose
 * Serves static files from a specified folder (use the `static` option)
 * Performs automatic LESS stylesheet compilation with `less-middleware` if a `.css` file is requested and the corresponding `.less` file exists in the static folder
-* Provies a way to add more custom middleware if you wish, before any routes are added.
+* Provides a way to add more custom middleware if you wish, before any routes are added.
 
 ## Using Appy
 
@@ -204,6 +204,8 @@ The `username` property is generally specific enough that it only matches users.
 *Hardcoded users win* in case of any conflict.
 
 ## Changelog
+
+0.4.8: bumped mongodb driver dependency to 1.4.x. The 1.3.x driver rejects `$or` in remove commands when talking to MongoDB server version 2.6.x.
 
 0.4.7: don't crash if the port is an actual number and not a string representation of a number (this happens when neither `PORT` nor `data/port` is found and 3000 is assumed).
 
