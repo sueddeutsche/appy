@@ -283,9 +283,16 @@ var authStrategies = {
       passport.authenticate('local',
         { failureRedirect: '/login', failureFlash: true }),
       function(req, res) {
-        if(options.redirect) {
+        if (options.redirect) {
           // Send the response back to app.js to check permissions.
-          res.redirect(options.redirect(req.user));
+          // New version: takes req and callback
+          if (options.redirect.length === 2) {
+            return options.redirect(req, function(url) {
+              return res.redirect(url);
+            });
+          }
+          // bc version: no callback or req
+          return res.redirect(options.redirect(req.user));
         } else {
           // If for some reason the Apostrophe.js check doesn't work
           // then home seems a sensible default.

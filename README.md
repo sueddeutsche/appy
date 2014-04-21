@@ -205,6 +205,8 @@ The `username` property is generally specific enough that it only matches users.
 
 ## Changelog
 
+0.4.9: the local strategy's redirect callback may now take two arguments, `req` and `callback`. This allows asynchronous work to be done before invoking the callback with the URL. The URL to redirect to is the only argument to the callback.
+
 0.4.8: bumped mongodb driver dependency to 1.4.x. The 1.3.x driver rejects `$or` in remove commands when talking to MongoDB server version 2.6.x.
 
 0.4.7: don't crash if the port is an actual number and not a string representation of a number (this happens when neither `PORT` nor `data/port` is found and 3000 is assumed).
