@@ -604,13 +604,13 @@ function appBootstrap(callback) {
       // custom auth strategies need to be able to see it
       options.auth.options.beforeSignin = options.beforeSignin;
       strategy(options.auth.options);
-    }
 
-    app.get('/logout', function(req, res)
-    {
-      req.logOut();
-      res.redirect('/');
-    });
+      app.get('/logout', function(req, res)
+      {
+        req.logOut();
+        res.redirect('/');
+      });
+    }
 
     return callback(null);
   });
