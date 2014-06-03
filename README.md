@@ -205,6 +205,8 @@ The `username` property is generally specific enough that it only matches users.
 
 ## Changelog
 
+0.4.11: Deep-clone the hardcoded user before logging them in so there's no risk of modifications to the original array of users. Then delete their password property so there is no risk it will be accidentally exposed by application code.
+
 0.4.9: the local strategy's redirect callback may now take two arguments, `req` and `callback`. This allows asynchronous work to be done before invoking the callback with the URL. The URL to redirect to is the only argument to the callback.
 
 0.4.8: bumped mongodb driver dependency to 1.4.x. The 1.3.x driver rejects `$or` in remove commands when talking to MongoDB server version 2.6.x.

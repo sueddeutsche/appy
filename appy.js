@@ -117,6 +117,11 @@ var authStrategies = {
         });
         if (user) {
           if (user.password === password) {
+            // Never modify the original from the array
+            user = _.cloneDeep(user);
+            // Don't keep this around where it might wind up
+            // in a session or worse
+            delete user.password;
             // For the convenience of mongodb (it's unique)
             user._id = username;
             return done(null, user);
