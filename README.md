@@ -203,7 +203,25 @@ The `username` property is generally specific enough that it only matches users.
 
 *Hardcoded users win* in case of any conflict.
 
+## Prefixing All URLs
+
+To accommodate the occasional demand to run a node site in a subdirectory rather than a subdomain, we've added support for prefixing all URLs.
+
+If you set the `prefix` option, it will be:
+
+* Prepended to the static route for assets
+* Prepended automatically to *every app.get, app.post, etc. route*
+* Prepended automatically to res.redirect URLs if they are not fully absolute
+
+This way code intended for a site hosted at the root of a website can work without modification when the entire site is prefixed.
+
+This way your reverse proxy server can proxy different prefixed URLs of the same website to different node apps.
+
+Of course it is your responsibility to arrange your frontend code to respect the prefix also.
+
 ## Changelog
+
+0.5.0: support for the `prefix` option, which allows you to prefix all URLs throughout the site. Express functions like `.get`, `.post`, etc. automatically prepend the prefix. So does `res.redirect`.
 
 0.4.11: Deep-clone the hardcoded user before logging them in so there's no risk of modifications to the original array of users. Then delete their password property so there is no risk it will be accidentally exposed by application code.
 

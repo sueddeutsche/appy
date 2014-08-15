@@ -12,9 +12,9 @@ var lessMiddleware = require('less-middleware');
 var passwordHash = require('password-hash');
 var clone = require('clone');
 
-var options;
+var options, globalOptions;
 var db;
-var app;
+var app, baseApp;
 var insecure = { login: true, logout: true };
 
 var authStrategies = {
@@ -253,7 +253,7 @@ var authStrategies = {
           '<% if (message) { %>' +
           '<h3><%= message %></h3>' +
           '<% } %>' +
-          '<form action="/login" method="post">' +
+          '<form action="' + (globalOptions.prefix || '') + '/login" method="post">' +
             '<div>' +
             '<label>Username</label>' +
             '<input type="text" name="username" /><br/>' +
@@ -310,7 +310,7 @@ var authStrategies = {
 
 module.exports.bootstrap = function(optionsArg)
 {
-  options = optionsArg;
+  globalOptions = options = optionsArg;
   if (!options.rootDir) {
     // Convert foo/node_modules/appy back to foo,
     // so we can find things like foo/data/port automatically
@@ -417,7 +417,27 @@ function dbBootstrap(callback) {
 }
 
 function appBootstrap(callback) {
+
+  if (options.prefix) {
+    var original = express.response.redirect;
+    express.response.redirect = function(status, url) {
+      if (arguments.length === 1) {
+        url = status;
+        status = 302;
+      }
+      if (!url.match(/^[a-zA-Z]+:/))
+      {
+        url = options.prefix + url;
+      }
+      return original.call(this, status, url);
+    };
+  }
+
   app = module.exports.app = express();
+  if (options.prefix) {
+    baseApp = express();
+    baseApp.use(options.prefix, app);
+  }
 
   // Get the compress middleware in there right away to avoid conflicts
   // and maximize its use. It's awesome, but you can disable it
@@ -663,10 +683,10 @@ module.exports.listen = function() {
   }
   if (port.toString().match(/^\d+$/)) {
     console.log("Listening on " + address + ":" + port);
-    app.listen(port, address);
+    (baseApp || app).listen(port, address);
   } else {
     console.log("Listening at " + port);
-    app.listen(port);
+    (baseApp || app).listen(port);
   }
 };
 

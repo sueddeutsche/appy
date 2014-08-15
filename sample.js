@@ -1,6 +1,10 @@
 var appy = require(__dirname + '/appy.js');
 
 appy.bootstrap({
+
+  // Prefix all URLs with /test
+  prefix: '/test',
+
   // Hardcode some users. Will also look for users in the users collection by default
   auth: {
     strategy: 'local',
