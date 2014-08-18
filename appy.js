@@ -458,9 +458,22 @@ function appBootstrap(callback) {
   if (options.static)
   {
     if (options.less) {
-      app.use(lessMiddleware({
-        src: options.static,
-        compress: true
+      app.use(lessMiddleware(options.static, {
+        postprocess: {
+          css: function(css) {
+            if (!options.prefix) {
+              return css;
+            }
+            css = prefixCssUrls(css);
+            return css;
+          }
+        }
+      },
+      {
+        // parser options
+      },
+      {
+        compress: true,
       }));
     }
     app.use(express.static(options.static));
@@ -726,4 +739,30 @@ function prefixMatch(prefix, url)
   }
   return false;
 }
+
+function prefixCssUrls(css) {
+  css = css.replace(/url\(([^'"].*?)\)/g, function(s, url) {
+    if (url.match(/^\//)) {
+      url = options.prefix + url;
+    }
+    return 'url(' + url + ')';
+  });
+  css = css.replace(/url\(\"(.+?)\"\)/g, function(s, url) {
+    if (url.match(/^\//)) {
+      url = options.prefix + url;
+    }
+    return 'url("' + url + '")';
+  });
+  css = css.replace(/url\(\'(.+?)\'\)/g, function(s, url) {
+    if (url.match(/^\//)) {
+      url = options.prefix + url;
+    }
+    return 'url(\'' + url + '\')';
+  });
+  return css;
+}
+
+// In case you need to compile CSS in a compatible way
+// elsewhere in your app
+module.exports.prefixCssUrls = prefixCssUrls;
 

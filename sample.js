@@ -3,7 +3,7 @@ var appy = require(__dirname + '/appy.js');
 appy.bootstrap({
 
   // Prefix all URLs with /test
-  prefix: '/test',
+  // prefix: '/test',
 
   // Hardcode some users. Will also look for users in the users collection by default
   auth: {
@@ -29,6 +29,9 @@ appy.bootstrap({
 
   // Serve static files
   static: __dirname + '/sample-public',
+
+  // Compile LESS to CSS automatically
+  less: true,
 
   // Lock all URLs beginning with this prefix to require login. You can lock
   // an array of prefixes if you wish . Prefixes must be followed by / or . or

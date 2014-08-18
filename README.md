@@ -212,12 +212,15 @@ If you set the `prefix` option, it will be:
 * Prepended to the static route for assets
 * Prepended automatically to *every app.get, app.post, etc. route*
 * Prepended automatically to res.redirect URLs if they are not fully absolute
+* Prepended to all URLs in CSS output by the LESS compiler middleware
 
-This way code intended for a site hosted at the root of a website can work without modification when the entire site is prefixed.
+This way code intended for a site hosted at the root of a website can work without modification when the entire site is prefixed, or be moved back to an unprefixed site later.
 
-This way your reverse proxy server can proxy different prefixed URLs of the same website to different node apps.
+With this feature, your reverse proxy server can proxy different prefixed URLs of the same website to different node apps.
 
-Of course it is your responsibility to arrange your frontend code to respect the prefix also.
+Of course it is your responsibility to arrange your frontend JavaScript code to respect the prefix also.
+
+For your convenience a `prefixCssUrls` method is exported. You can use this method to prefix CSS URLs in a compatible way in CSS that you are outputting by other means.
 
 ## Changelog
 
