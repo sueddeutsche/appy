@@ -224,6 +224,8 @@ For your convenience a `prefixCssUrls` method is exported. You can use this meth
 
 ## Changelog
 
+0.5.2: temporarily depend explicitly on the MongoDB 1.4.8 driver, because 1.4.9 has a crashing bug affecting Apostrophe sites.
+
 0.5.0: support for the `prefix` option, which allows you to prefix all URLs throughout the site. Express functions like `.get`, `.post`, etc. automatically prepend the prefix. So does `res.redirect`.
 
 0.4.11: Deep-clone the hardcoded user before logging them in so there's no risk of modifications to the original array of users. Then delete their password property so there is no risk it will be accidentally exposed by application code.
