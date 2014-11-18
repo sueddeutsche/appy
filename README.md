@@ -222,7 +222,13 @@ Of course it is your responsibility to arrange your frontend JavaScript code to 
 
 For your convenience a `prefixCssUrls` method is exported. You can use this method to prefix CSS URLs in a compatible way in CSS that you are outputting by other means.
 
+## BLESS support
+
+If you are using the LESS middleware and are generating more than 4,095 CSS rules from a single LESS file, you'll want to turn on the `bless` option with `bless: true`. This splits the CSS into multiple files at the 4,095 selector limit so that <=IE9 doesn't fail to read those rules.
+
 ## Changelog
+
+0.5.3: optional BLESS support.
 
 0.5.2: temporarily depend explicitly on the MongoDB 1.4.8 driver, because 1.4.9 has a crashing bug affecting Apostrophe sites.
 
