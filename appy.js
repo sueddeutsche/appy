@@ -1,3 +1,5 @@
+/* jshint node:true */
+
 var express = require('express');
 var _ = require('lodash');
 var passport = require('passport');
@@ -6,16 +8,16 @@ var async = require('async');
 var mongo = require('mongodb');
 var ConnectMongo = require('connect-mongo')(express);
 var flash = require('connect-flash');
-var url = require('url');
 var dirname = require('path').dirname;
 var lessMiddleware = require('less-middleware');
 var passwordHash = require('password-hash');
 var clone = require('clone');
+var bless = require('bless');
+var path = require('path');
 
 var options, globalOptions;
 var db;
 var app, baseApp;
-var insecure = { login: true, logout: true };
 
 var authStrategies = {
   twitter: function(authOptions)
@@ -467,7 +469,50 @@ function appBootstrap(callback) {
             css = prefixCssUrls(css);
             return css;
           }
+        },
+
+        // If requested, use BLESS to split CSS into multiple files
+        // for <=IE9, but only if there's enough to make it necessary
+        storeCss: function(pathname, css, next) {
+          if (!globalOptions.bless) {
+            fs.writeFileSync(pathname, css);
+            return next();
+          }
+          var output = path.dirname(pathname);
+          new (bless.Parser)({
+            output: output,
+            options: {}
+          }).parse(css, function (err, files) {
+            if (files.length === 1) {
+              // No splitting needed for <= IE9
+              fs.writeFileSync(pathname, css);
+              return next();
+            }
+            var master = '';
+            var n = 1;
+            _.each(files, function(file) {
+              var filePath = addN(pathname);
+              var basename = path.basename(pathname);
+              var webPath = addN(basename);
+              fs.writeFileSync(filePath, file.content);
+              master += '@import url("' + webPath + '");\n';
+              n++;
+            });
+            function addN(filename) {
+              return filename.replace(/\.css$/, '-' + n + '.css');
+            }
+            fs.writeFileSync(pathname, master);
+            return next();
+          });
         }
+
+        //   fs.mkdirp(path.dirname(pathname), 511 /* 0777 */, function(err) {
+        //     if (err) return next(err);
+
+        //     fs.writeFile(pathname, css, 'utf8', next);
+        //   });
+        // }
+
       },
       {
         // parser options
