@@ -317,6 +317,13 @@ module.exports.bootstrap = function(optionsArg)
     options.rootDir = dirname(dirname(__dirname));
   }
 
+  // Allow passport to be passed in to ensure the same instance
+  // is used throughout a project that adds other authorization
+  // strategies
+  if (options.passport) {
+    passport = options.passport;
+  }
+
   async.series([dbBootstrap, appBootstrap], function(err) {
     if (err) {
       console.log(err);
