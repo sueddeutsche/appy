@@ -205,7 +205,7 @@ The `username` property is generally specific enough that it only matches users.
 
 ## Changelog
 
-0.4.12: You may pass `passport` to appy via the `passport` option. This is helpful if you are writing multiple modules that all add authorization strategies. Require `passport` in your top-level app, and pass it to all of your modules. If you don't do this, appy still requires `passport` on its own, so there is no bc break.
+0.4.14: You may pass `passport` to appy via the `passport` option. This is helpful if you are writing multiple modules that all add authorization strategies. Require `passport` in your top-level app, and pass it to all of your modules. If you don't do this, appy still requires `passport` on its own, so there is no bc break.
 
 0.4.11: Deep-clone the hardcoded user before logging them in so there's no risk of modifications to the original array of users. Then delete their password property so there is no risk it will be accidentally exposed by application code.
 
