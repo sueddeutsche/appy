@@ -228,6 +228,8 @@ If you are using the LESS middleware and are generating more than 4,095 CSS rule
 
 ## Changelog
 
+0.5.5: whoops, docs link pointed to an old repo.
+
 0.5.4: You may pass `passport` to appy via the `passport` option. This is helpful if you are writing multiple modules that all add authorization strategies. Require `passport` in your top-level app, and pass it to all of your modules. If you don't do this, appy still requires `passport` on its own, so there is no bc break.
 
 0.5.3: optional BLESS support.
