@@ -720,7 +720,7 @@ function appBootstrap(callback) {
   }
 }
 
-module.exports.listen = function(address, post) {
+module.exports.listen = function(address, port) {
   // Heroku
   if (process.env.ADDRESS) {
     address = process.env.ADDRESS;
@@ -730,6 +730,7 @@ module.exports.listen = function(address, post) {
         // Stagecoach option
         address = fs.readFileSync(options.rootDir + '/data/address', 'UTF-8').replace(/\s+$/, '');
       } catch (err) {
+        address = '0.0.0.0';
         console.log("I see no data/address file, defaulting to address " + address);
       }
     }
@@ -742,6 +743,7 @@ module.exports.listen = function(address, post) {
         // Stagecoach option
         port = fs.readFileSync(options.rootDir + '/data/port', 'UTF-8').replace(/\s+$/, '');
       } catch (err) {
+        port = 3000;
         console.log("I see no data/port file, defaulting to port " + port);
       }
     }

@@ -1,4 +1,4 @@
-var appy = require(__dirname + '/appy.js');
+var appy = require('./appy.js');
 
 appy.bootstrap({
 
