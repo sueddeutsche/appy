@@ -721,6 +721,9 @@ function appBootstrap(callback) {
 }
 
 module.exports.listen = function(address, port) {
+  address = address || options.address;
+  port = port || options.port;
+
   // Heroku
   if (process.env.ADDRESS) {
     address = process.env.ADDRESS;
@@ -738,7 +741,7 @@ module.exports.listen = function(address, port) {
   if (process.env.PORT) {
     port = process.env.PORT;
   } else {
-    if (port === undefined || port === '') {
+    if (isNaN(port) === true) {
       try {
         // Stagecoach option
         port = fs.readFileSync(options.rootDir + '/data/port', 'UTF-8').replace(/\s+$/, '');
