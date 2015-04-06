@@ -720,7 +720,11 @@ function appBootstrap(callback) {
   }
 }
 
-module.exports.listen = function(address, port) {
+module.exports.listen = function(address, port /* or just port, or nothing */) {
+  if (arguments.length === 1) {
+    port = address;
+    address = undefined;
+  }
   address = address || options.address;
   port = port || options.port;
 
