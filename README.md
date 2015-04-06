@@ -18,7 +18,7 @@ Appy creates an app that:
 * Offers a simple way to lock any part of the app to require login
 * Has the Express compress, bodyParser, session and cookie middleware in place
 * Uses the jade template engine by default, but you can configure others
-* If address and port are not passed to `listen`, listens on port 3000 on all interfaces. Also supports PORT and HOST environment variables, or `data/port` and `data/address` files (ready for use with Heroku or Stagecoach). An explicitly passed address and port always win.
+* If `address` and `port` are not configured as options or passed to `listen`, listens on port 3000 on all interfaces. Also supports PORT and HOST environment variables, or `data/port` and `data/address` files (ready for use with Heroku or Stagecoach). Explicit settings always win.
 * Adds support for robust partials to whatever template language you choose
 * Serves static files from a specified folder (use the `static` option)
 * Performs automatic LESS stylesheet compilation with `less-middleware` if a `.css` file is requested and the corresponding `.less` file exists in the static folder
