@@ -741,7 +741,7 @@ module.exports.listen = function(address, port) {
   if (process.env.PORT) {
     port = process.env.PORT;
   } else {
-    if (isNaN(port) === true) {
+    if (!port) {
       try {
         // Stagecoach option
         port = fs.readFileSync(options.rootDir + '/data/port', 'UTF-8').replace(/\s+$/, '');
