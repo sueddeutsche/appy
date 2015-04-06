@@ -67,6 +67,8 @@ appy.bootstrap({
     // Or more than one index:
     // [ { name: 'posts', indexes: [ { fields: { { title: 1 } } }, ... ] } ]
   },
+  address: process.env.ADDRESS || null,
+  port: process.env.PORT || null,
 
   // This is where your code goes! Add routes, do anything else you want to do,
   // then call appy.listen

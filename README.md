@@ -18,9 +18,7 @@ Appy creates an app that:
 * Offers a simple way to lock any part of the app to require login
 * Has the Express compress, bodyParser, session and cookie middleware in place
 * Uses the jade template engine by default, but you can configure others
-* Listens on port 3000 unless it sees a PORT environment variable
- or a `data/port` file (ready for use with Heroku or Stagecoach)
-* Binds on all IP addresses unless it sees an ADDRESS environment variable or a `data/address` file
+* If address and port are not passed to `listen`, listens on port 3000 on all interfaces. Also supports PORT and HOST environment variables, or `data/port` and `data/address` files (ready for use with Heroku or Stagecoach). An explicitly passed address and port always win.
 * Adds support for robust partials to whatever template language you choose
 * Serves static files from a specified folder (use the `static` option)
 * Performs automatic LESS stylesheet compilation with `less-middleware` if a `.css` file is requested and the corresponding `.less` file exists in the static folder
@@ -111,6 +109,14 @@ Here's a simple example (see also `sample.js`):
             res.send('added');
           });
         });
+
+        // Listens on port 3000 on all IPV4 addresses,
+        // unless otherwise configured via `data/port` and
+        // `data/address` files, or the `PORT` and
+        // `ADDRESS` environment variables
+
+        // You can also call appy.listen('ip.address', 3001)
+        // Or, appy.listen(3001)
         appy.listen();
       }
     });
@@ -227,6 +233,8 @@ For your convenience a `prefixCssUrls` method is exported. You can use this meth
 If you are using the LESS middleware and are generating more than 4,095 CSS rules from a single LESS file, you'll want to turn on the `bless` option with `bless: true`. This splits the CSS into multiple files at the 4,095 selector limit so that <=IE9 doesn't fail to read those rules.
 
 ## Changelog
+
+0.5.6: optional support for `appy.listen('ip.address', 3001)`. Thanks to Jeremiah Harlan.
 
 0.5.5: whoops, docs link pointed to an old repo.
 
