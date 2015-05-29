@@ -2,7 +2,7 @@
   "author": "P'unk Avenue <team@punkave.com> (http://punkave.com/)",
   "name": "appy",
   "description": "Bootstrap a typical Express 3.0 app with even less fuss than usual. Makes a bunch of bold assumptions that may or may not suit you.",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "homepage": "https://github.com/punkave/appy",
   "repository": {
     "type": "git",
@@ -14,7 +14,7 @@
     "bless": "^3.0.3",
     "clone": "~0.1.11",
     "connect-flash": "~0.1.0",
-    "connect-mongo": "~0.3.3",
+    "connect-mongo": "^0.8.1",
     "express": "~3.3.0",
     "jade": "~0.27.6",
     "less-middleware": "~1.0.3",
