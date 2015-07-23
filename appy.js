@@ -186,7 +186,13 @@ var authStrategies = {
       var user = JSON.parse(json);
       if (!user)
       {
-        return done(new Error("Bad JSON string in session"), null);
+        // Passing false as second argument clears their
+        // session so they can run around as a logged out person
+        // and try again; much more useful than an inscrutable
+        // error message with line numbers, which is what
+        // passport does if you report an error
+        // https://github.com/jaredhanson/passport/issues/6
+        return done(null, false);
       }
       if (user._mongodb) {
         return async.series({
@@ -198,7 +204,7 @@ var authStrategies = {
                 return callback(err);
               }
               if (!mongoUser) {
-                return callback(new Error('User no longer exists'));
+                return done(null, false);
               }
               user = mongoUser;
               user._mongodb = true;
@@ -214,7 +220,7 @@ var authStrategies = {
             return options.afterDeserializeUser(user, callback);
           }
         }, function(err) {
-          return done(err, (!err) && user);
+          return done(null, err ? false : user);
         });
       } else {
         return done(null, user);
