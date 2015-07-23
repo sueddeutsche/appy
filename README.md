@@ -234,7 +234,9 @@ If you are using the LESS middleware and are generating more than 4,095 CSS rule
 
 ## Changelog
 
-0.5.7: updated `connect-mongo` to get support for the `ttl` option.
+0.5.9: reporting an error from the passport deserializer just shows a code trace to the end user which is inappropriate, plus the user is unable to log out and try to log in again, etc. because their session is stuck. Instead, clear their session in this situation.
+
+0.5.7, 0.5.8: updated `connect-mongo` to get support for the `ttl` option.
 
 0.5.6: optional support for `appy.listen('ip.address', 3001)`. Thanks to Jeremiah Harlan.
 
