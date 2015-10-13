@@ -72,8 +72,14 @@ Here's a simple example (see also `sample.js`):
       // Choose your own please
       sessionSecret: 'whatever',
 
-      sessions: {
-        // You can pass options directly to connect-mongo here to customize sessions
+      sessionCore: {
+        // You can pass options directly to express-sessions here to customize
+        // sessions generally, including passing a custom store, see the
+        // express-sessions documentation
+      }
+
+      sessionStore: {
+        // You can pass options directly to connect-mongo here to customize session storage
       },
 
       // Redirects to this host if accessed by another name
@@ -233,6 +239,8 @@ For your convenience a `prefixCssUrls` method is exported. You can use this meth
 If you are using the LESS middleware and are generating more than 4,095 CSS rules from a single LESS file, you'll want to turn on the `bless` option with `bless: true`. This splits the CSS into multiple files at the 4,095 selector limit so that <=IE9 doesn't fail to read those rules.
 
 ## Changelog
+
+0.5.10: The `sessions` option, while still accepted, has been deprecated in favor of `sessionStore` because it configures `connect-mongo`. A new `sessionCore` option has also been added and it directly configures `express-session`.
 
 0.5.9: reporting an error from the passport deserializer just shows a code trace to the end user which is inappropriate, plus the user is unable to log out and try to log in again, etc. because their session is stuck. Instead, clear their session in this situation.
 

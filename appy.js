@@ -547,7 +547,11 @@ function appBootstrap(callback) {
   // We changed the collection name from the old "sessions" so that connect-mongo doesn't
   // try to parse sessions created by connect-mongodb, which won't work
 
-  var storeOptions = clone(options.sessions || {});
+  // It was a bad choice to use "options.sessions" for the options to the store, for bc
+  // we accept it but now we encourage "sessionStore" and "sessionCore" which helps
+  // a little with that sloppy mess
+
+  var storeOptions = clone(options.sessionStore || options.sessions || {});
   storeOptions.db = db;
 
   var sessions;
@@ -588,7 +592,12 @@ function appBootstrap(callback) {
       return callback(err);
     }
     mongoStore = new ConnectMongo(storeOptions);
-    app.use(express.session({ secret: options.sessionSecret, store: mongoStore }));
+    var sessionOptions = {
+      secret: options.sessionSecret,
+      store: mongoStore
+    };
+    _.assign(sessionOptions, options.sessionCore || {});
+    app.use(express.session(sessionOptions));
     // We must install passport's middleware before we can set routes that depend on it
     app.use(passport.initialize());
 
