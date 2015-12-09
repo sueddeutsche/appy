@@ -240,6 +240,8 @@ If you are using the LESS middleware and are generating more than 4,095 CSS rule
 
 ## Changelog
 
+0.5.11: `log` option can be used to provide a function that takes an verb and an object containing details and logs that information as you see fit. `appy` invokes this function in various scenarios when users succeed or fail in logging in via the local strategy.
+
 0.5.10: The `sessions` option, while still accepted, has been deprecated in favor of `sessionStore` because it configures `connect-mongo`. A new `sessionCore` option has also been added and it directly configures `express-session`.
 
 0.5.9: reporting an error from the passport deserializer just shows a code trace to the end user which is inappropriate, plus the user is unable to log out and try to log in again, etc. because their session is stuck. Instead, clear their session in this situation.

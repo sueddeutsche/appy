@@ -19,6 +19,10 @@ var options, globalOptions;
 var db;
 var app, baseApp;
 
+var log = function(action, info) {
+  // Default is to do nothing, see options.log
+};
+
 var authStrategies = {
   twitter: function(authOptions)
   {
@@ -91,6 +95,7 @@ var authStrategies = {
         // that will match all users for whom either username or email
         // happens to be blank
         if (!username.length) {
+          log('blank username', { username: username });
           return done(null, false, { message: 'Invalid username or password' });
         }
         function done(err, user, args) {
@@ -126,13 +131,16 @@ var authStrategies = {
             delete user.password;
             // For the convenience of mongodb (it's unique)
             user._id = username;
+            log('login', { username: username, _id: user._id });
             return done(null, user);
           } else {
+            log('incorrect password', { username: username });
             return done(null, false, { message: 'Invalid username or password' });
           }
         }
         var collection = options.collection || 'users';
         if (!module.exports[collection]) {
+          log('invalid users collection', { username: username });
           return done(null, false, { message: 'Invalid username or password' });
         }
         var users = module.exports[collection];
@@ -145,6 +153,7 @@ var authStrategies = {
             return done(err);
           }
           if (!user) {
+            log('no such user', { username: username });
             return done(null, false, { message: 'Invalid username or password' });
           }
           // Allow an alternate password verification function
@@ -162,8 +171,10 @@ var authStrategies = {
             // serialization middleware, to ensure we have an up to date idea
             // of their profile and privileges
             user._mongodb = true;
+            log('login', { username: username, _id: user._id });
             return done(null, user);
           } else {
+            log('incorrect password', { username: username });
             return done(null, false, { message: 'Invalid username or password' });
           }
         });
@@ -319,6 +330,11 @@ var authStrategies = {
 module.exports.bootstrap = function(optionsArg)
 {
   globalOptions = options = optionsArg;
+
+  if (options.log) {
+    log = options.log;
+  }
+
   if (!options.rootDir) {
     // Convert foo/node_modules/appy back to foo,
     // so we can find things like foo/data/port automatically
