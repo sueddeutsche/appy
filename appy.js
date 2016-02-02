@@ -16,9 +16,6 @@ var clone = require('clone');
 var bless = require('bless');
 var path = require('path');
 
-var throng = require('throng');
-var WORKERS = process.env.WEB_CONCURRENCY || 1;
-
 var options, globalOptions;
 var db;
 var app, baseApp;
@@ -805,21 +802,13 @@ module.exports.listen = function(address, port /* or just port, or nothing */) {
     }
   }
 
-  function startServer() {
-    if (port.toString().match(/^\d+$/)) {
-      console.log("Listening on " + address + ":" + port);
-      (baseApp || app).listen(port, address);
-    } else {
-      console.log("Listening at " + port);
-      (baseApp || app).listen(port);
-    }
+  if (port.toString().match(/^\d+$/)) {
+    console.log("Listening on " + address + ":" + port);
+    (baseApp || app).listen(port, address);
+  } else {
+    console.log("Listening at " + port);
+    (baseApp || app).listen(port);
   }
-  
-  // startServer();
-  throng(startServer, {
-    workers: WORKERS,
-    lifetime: Infinity
-  });
 };
 
 
