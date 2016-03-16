@@ -1,7 +1,6 @@
 /* jshint node:true */
 
 var express = require('express');
-var serveStatic = require('serve-static');
 var _ = require('lodash');
 var passport = require('passport');
 var fs = require('fs');
@@ -551,21 +550,7 @@ function appBootstrap(callback) {
         compress: true,
       }));
     }
-    // options for the express middleware serve-static an be passed here!
-    // https://github.com/expressjs/serve-static#options
-    //
-    // For example it could be necessary to set max-age property of the
-    // Cache-Control header. Therefor just pass the following object as
-    // options.serveStaticOptions.
-    //
-    // {
-    //  maxAge: '1 year'
-    // }
-    //
-    // You don't have to recalculate the period in seconds. Further
-    // information can be found here: https://www.npmjs.com/package/ms#readme
-    //
-    app.use(serveStatic(options.static, options.serveStaticOptions));
+    app.use(express.static(options.static, options.staticOptions));
   }
 
   app.use(express.bodyParser());
@@ -872,4 +857,3 @@ function prefixCssUrls(css) {
 // In case you need to compile CSS in a compatible way
 // elsewhere in your app
 module.exports.prefixCssUrls = prefixCssUrls;
-
