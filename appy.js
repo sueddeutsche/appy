@@ -340,124 +340,96 @@ var authStrategies = {
   }
 };
 
-module.exports.bootstrap = function(optionsArg)
-{
-  globalOptions = options = optionsArg;
-
-  if (options.log) {
-    log = options.log;
-  }
-
-  if (!options.rootDir) {
-    // Convert foo/node_modules/appy back to foo,
-    // so we can find things like foo/data/port automatically
-    options.rootDir = dirname(dirname(__dirname));
-  }
-
-  // Allow passport to be passed in to ensure the same instance
-  // is used throughout a project that adds other authorization
-  // strategies
-  if (options.passport) {
-    passport = options.passport;
-  }
-
-  async.series([dbBootstrap, appBootstrap], function(err) {
-    if (err) {
-      console.log(err);
-      process.exit(1);
-    }
-    options.ready(app, db);
-  });
-};
-
 function dbBootstrap(callback) {
   // Open the database connection. Always use MongoClient with its
   // sensible defaults. Build a URI if we need to so we can call it
   // in a consistent way
 
-  return async.series({
-    connect: function(callback) {
-      var uri = 'mongodb://';
-      if (options.db.uri) {
-        uri = options.db.uri;
-      } else {
-        if (options.db.user) {
-          uri += options.db.user + ':' + options.db.password + '@';
-        }
-        if (!options.db.host) {
-          options.db.host = 'localhost';
-        }
-        if (!options.db.port) {
-          options.db.port = 27017;
-        }
-        uri += options.db.host + ':' + options.db.port + '/' + options.db.name;
+  function connect(callback) {
+    var uri = 'mongodb://';
+    
+    if (options.db.uri) {
+      uri = options.db.uri;
+    } else {
+      if (options.db.user) {
+        uri += options.db.user + ':' + options.db.password + '@';
       }
-      return mongo.MongoClient.connect(uri, function (err, dbArg) {
-        db = dbArg;
-        return callback(err);
-      });
-    },
-    collections: function(callback) {
-      // Automatically configure a collection for users if the local strategy
-      // is in use
-
-      var collections = options.db.collections || [];
-      if (options.auth && (options.auth.strategy === 'local')) {
-        var authCollection = options.auth.options.collection || 'users';
-        if (!_.contains(collections, authCollection)) {
-          collections.push(authCollection);
-        }
+      if (!options.db.host) {
+        options.db.host = 'localhost';
       }
-
-      async.map(collections, function(info, next) {
-        var name;
-        var options;
-        if (typeof(info) !== 'string') {
-          name = info.name;
-          options = info;
-          delete options.name;
-        }
-        else
-        {
-          name = info;
-          options = {};
-        }
-        db.collection(name, options, function(err, collection) {
-          if (err) {
-            console.log('no ' + name + ' collection available, mongodb offline?');
-            console.log(err);
-            process.exit(1);
-          }
-          if (options.index) {
-            options.indexes = [ options.index ];
-          }
-          if (options.indexes) {
-            async.map(options.indexes, function(index, next) {
-              var fields = index.fields;
-              // The remaining properties are options
-              delete index.fields;
-              collection.ensureIndex(fields, index, next);
-            }, function(err) {
-              if (err) {
-                console.log('Unable to create index');
-                console.log(err);
-                process.exit(1);
-              }
-              afterIndexes();
-            });
-          }
-          else
-          {
-            afterIndexes();
-          }
-          function afterIndexes() {
-            module.exports[name] = collection;
-            next();
-          }
-        });
-      }, callback);
+      if (!options.db.port) {
+        options.db.port = 27017;
+      }
+      uri += options.db.host + ':' + options.db.port + '/' + options.db.name;
     }
-  }, callback);
+    return mongo.MongoClient.connect(uri, function (err, dbArg) {
+      db = dbArg;
+      return callback(err);
+    });
+  }
+
+  function configureCollections(callback) {
+    // Automatically configure a collection for users if the local strategy
+    // is in use
+    var collections = options.db.collections || [];
+
+    if (options.auth && (options.auth.strategy === 'local')) {
+      var authCollection = options.auth.options.collection || 'users';
+      if (!_.contains(collections, authCollection)) {
+        collections.push(authCollection);
+      }
+    }
+
+    async.map(collections, function(info, next) {
+      var name;
+      var options;
+
+      if (typeof(info) !== 'string') {
+        name = info.name;
+        options = info;
+        delete options.name;
+      }
+      else {
+        name = info;
+        options = {};
+      }
+      db.collection(name, options, function(err, collection) {
+        if (err) {
+          console.log('no ' + name + ' collection available, mongodb offline?');
+          console.log(err);
+          process.exit(1);
+        }
+        if (options.index) {
+          options.indexes = [ options.index ];
+        }
+        if (options.indexes) {
+          async.map(options.indexes, function(index, next) {
+            var fields = index.fields;
+
+            // The remaining properties are options
+            delete index.fields;
+            collection.ensureIndex(fields, index, next);
+          }, function(err) {
+            if (err) {
+              console.log('Unable to create index');
+              console.log(err);
+              process.exit(1);
+            }
+            afterIndexes();
+          });
+        }
+        else {
+          afterIndexes();
+        }
+        function afterIndexes() {
+          module.exports[name] = collection;
+          next();
+        }
+      });
+    }, callback);
+  }
+
+  return async.series([connect, configureCollections], callback);
 }
 
 function appBootstrap(callback) {
@@ -764,7 +736,36 @@ function appBootstrap(callback) {
   }
 }
 
-module.exports.listen = function(address, port /* or just port, or nothing */) {
+function bootstrap(optionsArg) {
+  globalOptions = options = optionsArg;
+
+  if (options.log) {
+    log = options.log;
+  }
+
+  if (!options.rootDir) {
+    // Convert foo/node_modules/appy back to foo,
+    // so we can find things like foo/data/port automatically
+    options.rootDir = dirname(dirname(__dirname));
+  }
+
+  // Allow passport to be passed in to ensure the same instance
+  // is used throughout a project that adds other authorization
+  // strategies
+  if (options.passport) {
+    passport = options.passport;
+  }
+
+  async.series([dbBootstrap, appBootstrap], function done(err) {
+    if (err) {
+      console.log(err);
+      process.exit(1);
+    }
+    options.ready(app, db);
+  });
+};
+
+function listen(address, port /* or just port, or nothing */) {
   if (arguments.length === 1) {
     port = address;
     address = undefined;
@@ -807,7 +808,6 @@ module.exports.listen = function(address, port /* or just port, or nothing */) {
     (baseApp || app).listen(port);
   }
 };
-
 
 function securityMiddleware(req, res, next) {
   var i;
@@ -870,3 +870,5 @@ function prefixCssUrls(css) {
 // In case you need to compile CSS in a compatible way
 // elsewhere in your app
 module.exports.prefixCssUrls = prefixCssUrls;
+module.exports.bootstrap = bootstrap;
+module.exports.listen = listen;
