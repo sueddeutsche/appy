@@ -16,10 +16,9 @@ var bless = require('bless');
 var path = require('path');
 var ExpressBrute = require('express-brute');
 var MongoStore = require('express-brute-mongo');
-var MongoClient = require('mongodb').MongoClient;
-var bruteforceMiddleware;
-var bruteforceStore;
+var moment = require('moment');
 
+var bruteforceMiddleware;
 var options, globalOptions;
 var db;
 var app, baseApp;
@@ -309,7 +308,13 @@ var authStrategies = {
       }
     });
     app.post('/login',
-      bruteforceMiddleware.prevent,
+      function potentiallyPreventBruteForce(req, res, next) {
+        if (globalOptions.preventBruteForce) {
+          bruteforceMiddleware.prevent(req, res, next);
+        } else {
+          next();
+        }
+      },
       passport.authenticate('local',
         { failureRedirect: '/login', failureFlash: true }),
       function(req, res) {
@@ -357,13 +362,29 @@ function dbBootstrap(callback) {
     }
     return mongo.MongoClient.connect(uri, function (err, dbArg) {
       db = dbArg;
-      function initMongoStore(ready) {
-        ready(db.collection('bruteforce-store'));
-      }
-      bruteforceStore = new MongoStore(initMongoStore);
-      bruteforceMiddleware = new ExpressBrute(bruteforceStore, {freeRetries: 1});
       return callback(err);
     });
+  }
+
+  // Create a collection for bruteforce-attack information
+  // if needed
+  function initBruteForceCollection(callback) {
+    if (options.preventBruteForce) {
+      function initMongoStore(ready) {
+        ready(db.collection('aposBruteforceStore'));
+      }
+      var bruteforceStore = new MongoStore(initMongoStore);
+
+      if (!options.preventBruteForce.failCallback) {
+        function failCallback (req, res, next, nextValidRequestDate) {
+          res.send('To many login attempts. Please wait a while... Next possible login: ' + moment(nextValidRequestDate).format('MM/DD/YY - hh:mm:ss'));
+        }
+        options.preventBruteForce.failCallback = failCallback;
+      }
+      bruteforceMiddleware = new ExpressBrute(bruteforceStore, options.preventBruteForce);
+    }
+
+    callback();
   }
 
   function configureCollections(callback) {
@@ -427,7 +448,7 @@ function dbBootstrap(callback) {
     }, callback);
   }
 
-  return async.series([connect, configureCollections], callback);
+  return async.series([connect, initBruteForceCollection, configureCollections], callback);
 }
 
 function appBootstrap(callback) {
