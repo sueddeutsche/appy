@@ -14,6 +14,18 @@ var passwordHash = require('password-hash');
 var clone = require('clone');
 var bless = require('bless');
 var path = require('path');
+var ExpressBrute = require('express-brute');
+var MongoStore = require('express-brute-mongo');
+var MongoClient = require('mongodb').MongoClient;
+
+var store = new MongoStore(function (ready) {
+  MongoClient.connect('mongodb://127.0.0.1:27017/phoenix', function(err, db) {
+    if (err) throw err;
+    ready(db.collection('bruteforce-store'));
+  });
+});
+
+var bruteforce = new ExpressBrute(store, {freeRetries: 1});
 
 var options, globalOptions;
 var db;
@@ -304,6 +316,7 @@ var authStrategies = {
       }
     });
     app.post('/login',
+      bruteforce.prevent,
       passport.authenticate('local',
         { failureRedirect: '/login', failureFlash: true }),
       function(req, res) {
