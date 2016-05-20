@@ -17,15 +17,8 @@ var path = require('path');
 var ExpressBrute = require('express-brute');
 var MongoStore = require('express-brute-mongo');
 var MongoClient = require('mongodb').MongoClient;
-
-var store = new MongoStore(function (ready) {
-  MongoClient.connect('mongodb://127.0.0.1:27017/phoenix', function(err, db) {
-    if (err) throw err;
-    ready(db.collection('bruteforce-store'));
-  });
-});
-
-var bruteforce = new ExpressBrute(store, {freeRetries: 1});
+var bruteforceMiddleware;
+var bruteforceStore;
 
 var options, globalOptions;
 var db;
@@ -316,7 +309,7 @@ var authStrategies = {
       }
     });
     app.post('/login',
-      bruteforce.prevent,
+      bruteforceMiddleware.prevent,
       passport.authenticate('local',
         { failureRedirect: '/login', failureFlash: true }),
       function(req, res) {
@@ -347,7 +340,7 @@ function dbBootstrap(callback) {
 
   function connect(callback) {
     var uri = 'mongodb://';
-    
+
     if (options.db.uri) {
       uri = options.db.uri;
     } else {
@@ -364,6 +357,11 @@ function dbBootstrap(callback) {
     }
     return mongo.MongoClient.connect(uri, function (err, dbArg) {
       db = dbArg;
+      function initMongoStore(ready) {
+        ready(db.collection('bruteforce-store'));
+      }
+      bruteforceStore = new MongoStore(initMongoStore);
+      bruteforceMiddleware = new ExpressBrute(bruteforceStore, {freeRetries: 1});
       return callback(err);
     });
   }
